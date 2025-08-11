@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Calorie Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #ffecd2, #fcb69f);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+    }
+    .calculator {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+        width: 350px;
+        max-width: 90%;
+    }
+    h2 {
+        text-align: center;
+        color: #ff7f50;
+    }
+    label {
+        font-weight: bold;
+        display: block;
+        margin-top: 10px;
+    }
+    input, select, button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+    }
+    button {
+        background: #ff7f50;
+        color: white;
+        border: none;
+        margin-top: 15px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #e76f3c;
+    }
+    .result {
+        background: #f8f8f8;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 15px;
+        font-size: 1rem;
+    }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <h2>Calorie Calculator</h2>
+    
+    <label for="gender">Gender:</label>
+    <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
+
+    <label for="age">Age (years):</label>
+    <input type="number" id="age" placeholder="Enter your age">
+
+    <label for="weight">Weight (kg):</label>
+    <input type="number" id="weight" placeholder="Enter your weight">
+
+    <label for="height">Height (cm):</label>
+    <input type="number" id="height" placeholder="Enter your height">
+
+    <label for="activity">Activity Level:</label>
+    <select id="activity">
+        <option value="1.2">Sedentary (little/no exercise)</option>
+        <option value="1.375">Lightly active (1-3 days/week)</option>
+        <option value="1.55">Moderately active (3-5 days/week)</option>
+        <option value="1.725">Very active (6-7 days/week)</option>
+        <option value="1.9">Extra active (physical job, training)</option>
+    </select>
+
+    <button onclick="calculateCalories()">Calculate</button>
+
+    <div class="result" id="result">Enter your details to calculate.</div>
+</div>
+
+<script>
+function calculateCalories() {
+    let gender = document.getElementById("gender").value;
+    let age = parseInt(document.getElementById("age").value);
+    let weight = parseFloat(document.getElementById("weight").value);
+    let height = parseFloat(document.getElementById("height").value);
+    let activity = parseFloat(document.getElementById("activity").value);
+
+    if (!age || !weight || !height) {
+        document.getElementById("result").innerHTML = "⚠️ Please fill all fields correctly.";
+        return;
+    }
+
+    // BMR Calculation (Mifflin-St Jeor Equation)
+    let bmr;
+    if (gender === "male") {
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    // TDEE
+    let tdee = bmr * activity;
+
+    // Suggestions
+    let loss = tdee - 500;
+    let gain = tdee + 500;
+
+    // Save to localStorage
+    localStorage.setItem("lastCalculation", JSON.stringify({ bmr, tdee, loss, gain }));
+
+    document.getElementById("result").innerHTML = `
+        <strong>BMR:</strong> ${bmr.toFixed(2)} kcal/day<br>
+        <strong>Maintenance Calories:</strong> ${tdee.toFixed(2)} kcal/day<br>
+        <strong>Weight Loss Target:</strong> ${loss.toFixed(2)} kcal/day<br>
+        <strong>Weight Gain Target:</strong> ${gain.toFixed(2)} kcal/day
+    `;
+}
+
+// Load last calculation if available
+window.onload = () => {
+    let saved = localStorage.getItem("lastCalculation");
+    if (saved) {
+        let data = JSON.parse(saved);
+        document.getElementById("result").innerHTML = `
+            <strong>Last Saved:</strong><br>
+            BMR: ${data.bmr.toFixed(2)} kcal/day<br>
+            Maintenance: ${data.tdee.toFixed(2)} kcal/day<br>
+            Loss: ${data.loss.toFixed(2)} kcal/day<br>
+            Gain: ${data.gain.toFixed(2)} kcal/day
+        `;
+    }
+};
+</script>
+</body>
+</html>
