@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Calorie Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #f8ffae, #43c6ac);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    h1 {
+        margin-top: 20px;
+        color: #333;
+    }
+    .calculator {
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        max-width: 400px;
+        width: 90%;
+    }
+    label {
+        font-weight: bold;
+    }
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0 15px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        width: 100%;
+        padding: 10px;
+        background: #43c6ac;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #2e8b82;
+    }
+    .result {
+        margin-top: 20px;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 5px;
+    }
+    canvas {
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Advanced Calorie Calculator</h1>
+<div class="calculator">
+    <label>Age:</label>
+    <input type="number" id="age" placeholder="Years">
+
+    <label>Gender:</label>
+    <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
+
+    <label>Weight (kg):</label>
+    <input type="number" id="weight" placeholder="Kilograms">
+
+    <label>Height (cm):</label>
+    <input type="number" id="height" placeholder="Centimeters">
+
+    <label>Activity Level:</label>
+    <select id="activity">
+        <option value="1.2">Sedentary</option>
+        <option value="1.375">Lightly Active</option>
+        <option value="1.55">Moderately Active</option>
+        <option value="1.725">Very Active</option>
+        <option value="1.9">Super Active</option>
+    </select>
+
+    <button onclick="calculateCalories()">Calculate</button>
+
+    <div class="result" id="result"></div>
+    <canvas id="macroChart" width="400" height="300"></canvas>
+</div>
+
+<script>
+function calculateCalories() {
+    let age = parseInt(document.getElementById("age").value);
+    let gender = document.getElementById("gender").value;
+    let weight = parseFloat(document.getElementById("weight").value);
+    let height = parseFloat(document.getElementById("height").value);
+    let activity = parseFloat(document.getElementById("activity").value);
+
+    if (!age || !weight || !height) {
+        alert("Please fill all fields!");
+        return;
+    }
+
+    // BMR Calculation
+    let bmr;
+    if (gender === "male") {
+        bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    } else {
+        bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    }
+
+    // TDEE
+    let tdee = bmr * activity;
+
+    // BMI
+    let bmi = weight / ((height / 100) ** 2);
+    let bmiStatus = "";
+    if (bmi < 18.5) bmiStatus = "Underweight";
+    else if (bmi < 24.9) bmiStatus = "Normal weight";
+    else if (bmi < 29.9) bmiStatus = "Overweight";
+    else bmiStatus = "Obese";
+
+    // Macros (default 50% carbs, 30% protein, 20% fats)
+    let carbs = (tdee * 0.5) / 4;
+    let protein = (tdee * 0.3) / 4;
+    let fats = (tdee * 0.2) / 9;
+
+    document.getElementById("result").innerHTML = `
+        <strong>BMR:</strong> ${bmr.toFixed(2)} kcal/day<br>
+        <strong>TDEE:</strong> ${tdee.toFixed(2)} kcal/day<br>
+        <strong>BMI:</strong> ${bmi.toFixed(2)} (${bmiStatus})<br>
+        <strong>Carbs:</strong> ${carbs.toFixed(1)}g<br>
+        <strong>Protein:</strong> ${protein.toFixed(1)}g<br>
+        <strong>Fats:</strong> ${fats.toFixed(1)}g
+    `;
+
+    // Save to LocalStorage
+    localStorage.setItem("calorieData", JSON.stringify({ age, gender, weight, height, activity }));
+
+    // Chart
+    let ctx = document.getElementById('macroChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Carbs (g)', 'Protein (g)', 'Fats (g)'],
+            datasets: [{
+                data: [carbs, protein, fats],
+                backgroundColor: ['#ffcd56', '#36a2eb', '#ff6384']
+            }]
+        }
+    });
+}
+
+// Load saved data
+window.onload = () => {
+    let saved = localStorage.getItem("calorieData");
+    if (saved) {
+        let data = JSON.parse(saved);
+        document.getElementById("age").value = data.age;
+        document.getElementById("gender").value = data.gender;
+        document.getElementById("weight").value = data.weight;
+        document.getElementById("height").value = data.height;
+        document.getElementById("activity").value = data.activity;
+    }
+};
+</script>
+
+</body>
+</html>
