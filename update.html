@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgraded Calorie Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #f8ffae, #43c6ac);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    h1 {
+        margin-top: 20px;
+        color: #333;
+    }
+    .calculator {
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        max-width: 420px;
+        width: 90%;
+        transition: 0.3s ease-in-out;
+    }
+    label {
+        font-weight: bold;
+    }
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0 15px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        width: 48%;
+        padding: 10px;
+        background: #43c6ac;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+    button:hover {
+        background: #2e8b82;
+    }
+    .btn-group {
+        display: flex;
+        justify-content: space-between;
+    }
+    .result {
+        margin-top: 20px;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 5px;
+        display: none;
+    }
+    .bmi-underweight { color: #007bff; font-weight: bold; }
+    .bmi-normal { color: #28a745; font-weight: bold; }
+    .bmi-overweight { color: #ffc107; font-weight: bold; }
+    .bmi-obese { color: #dc3545; font-weight: bold; }
+    .error {
+        background: #ffdddd;
+        color: #a94442;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        display: none;
+    }
+    canvas {
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Upgraded Calorie Calculator</h1>
+<div class="calculator">
+    <div id="error" class="error"></div>
+    
+    <label>Age:</label>
+    <input type="number" id="age" placeholder="Years">
+
+    <label>Gender:</label>
+    <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
+
+    <label>Weight (kg):</label>
+    <input type="number" id="weight" placeholder="Kilograms">
+
+    <label>Height (cm):</label>
+    <input type="number" id="height" placeholder="Centimeters">
+
+    <label>Activity Level:</label>
+    <select id="activity">
+        <option value="1.2">Sedentary</option>
+        <option value="1.375">Lightly Active</option>
+        <option value="1.55">Moderately Active</option>
+        <option value="1.725">Very Active</option>
+        <option value="1.9">Super Active</option>
+    </select>
+
+    <div class="btn-group">
+        <button id="calcBtn">Calculate</button>
+        <button id="clearBtn" style="background:#dc3545;">Clear</button>
+    </div>
+
+    <div class="result" id="result"></div>
+    <canvas id="macroChart" width="400" height="300"></canvas>
+</div>
+
+<script>
+let chartInstance = null;
+
+function showError(msg) {
+    const errBox = document.getElementById("error");
+    errBox.textContent = msg;
+    errBox.style.display = "block";
+}
+
+function hideError() {
+    document.getElementById("error").style.display = "none";
+}
+
+function calculateCalories() {
+    hideError();
+
+    let age = parseInt(document.getElementById("age").value);
+    let gender = document.getElementById("gender").value;
+    let weight = parseFloat(document.getElementById("weight").value);
+    let height = parseFloat(document.getElementById("height").value);
+    let activity = parseFloat(document.getElementById("activity").value);
+
+    if (!age || !weight || !height) {
+        showError("Please fill all fields correctly.");
+        return;
+    }
+
+    // BMR
+    let bmr = gender === "male"
+        ? 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
+        : 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+
+    // TDEE
+    let tdee = bmr * activity;
+
+    // BMI
+    let bmi = weight / ((height / 100) ** 2);
+    let bmiClass = "", bmiStatus = "";
+    if (bmi < 18.5) { bmiStatus = "Underweight"; bmiClass = "bmi-underweight"; }
+    else if (bmi < 24.9) { bmiStatus = "Normal weight"; bmiClass = "bmi-normal"; }
+    else if (bmi < 29.9) { bmiStatus = "Overweight"; bmiClass = "bmi-overweight"; }
+    else { bmiStatus = "Obese"; bmiClass = "bmi-obese"; }
+
+    // Macros
+    let carbs = (tdee * 0.5) / 4;
+    let protein = (tdee * 0.3) / 4;
+    let fats = (tdee * 0.2) / 9;
+
+    // Update DOM
+    const resBox = document.getElementById("result");
+    resBox.innerHTML = `
+        <strong>BMR:</strong> ${bmr.toFixed(2)} kcal/day<br>
+        <strong>TDEE:</strong> ${tdee.toFixed(2)} kcal/day<br>
+        <strong>BMI:</strong> ${bmi.toFixed(2)} <span class="${bmiClass}">${bmiStatus}</span><br>
+        <strong>Carbs:</strong> ${carbs.toFixed(1)}g<br>
+        <strong>Protein:</strong> ${protein.toFixed(1)}g<br>
+        <strong>Fats:</strong> ${fats.toFixed(1)}g
+    `;
+    resBox.style.display = "block";
+
+    // Save
+    localStorage.setItem("calorieData", JSON.stringify({ age, gender, weight, height, activity }));
+
+    // Chart
+    let ctx = document.getElementById('macroChart').getContext('2d');
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+    chartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Carbs (g)', 'Protein (g)', 'Fats (g)'],
+            datasets: [{
+                data: [carbs, protein, fats],
+                backgroundColor: ['#ffcd56', '#36a2eb', '#ff6384']
+            }]
+        }
+    });
+}
+
+// Auto-load saved data
+window.onload = () => {
+    let saved = localStorage.getItem("calorieData");
+    if (saved) {
+        let data = JSON.parse(saved);
+        document.getElementById("age").value = data.age;
+        document.getElementById("gender").value = data.gender;
+        document.getElementById("weight").value = data.weight;
+        document.getElementById("height").value = data.height;
+        document.getElementById("activity").value = data.activity;
+    }
+};
+
+// Event Listeners
+document.getElementById("calcBtn").addEventListener("click", calculateCalories);
+document.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("input", calculateCalories); // live update
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+    document.querySelectorAll("input").forEach(el => el.value = "");
+    document.getElementById("result").style.display = "none";
+    document.getElementById("macroChart").getContext('2d').clearRect(0,0,400,300);
+    localStorage.removeItem("calorieData");
+});
+</script>
+
+</body>
+</html>
